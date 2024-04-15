@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="codemirror-5.65.16/lib/codemirror.css">
+  <script src="codemirror-5.65.16/lib/codemirror.js"></script>
+  <script src="codemirror-5.65.16/mode/clike/clike.js"></script>
+  <link rel="stylesheet" href="codemirror-5.65.16/theme/dracula.css">
+  <script src="codemirror-5.65.16/addon/edit/closebrackets.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="codemirror-5.65.16/mode/python/python.js"></script>
+</head>
+
+<body>
+ <div class="bg-secondary">
+  <div class="m-3  rounded bg-dark p-2">
+    <p class="text-white">
+      Given a linked list of N nodes where nodes can contain values 0s, 1s, and 2s only. The task is to segregate 0s, 1s, and
+      2s linked list such that all zeros segregate to head side, 2s at the end of the linked list, and 1s in the mid of 0s and
+      2s.
+    </p>
+    <p class="text-light">
+      Example 1:<br>
+      Input:<br>
+      N = 8<br>
+      value[] = {1,2,2,1,2,0,2,2}<br>
+      Output: 0 1 1 2 2 2 2 2<br>
+      Explanation: All the 0s are segregated to the left end of the linked list, 2s to the right end of the list, and 1s in
+      between.
+    </p>
+  </div>  
+  <div class="row m-3">
+    <!--Folloing div contains Choice and Editor text area-->
+    <div class="col">
+      <!--Following div contains Chioce and Submit-->
+      <div class="d-flex justify-content-between mb-2 bg-dark rounded p-2">
+        <!--Following div contains Choice-->
+        <div class="col-12 w-25">
+          <label class="visually-hidden" for="inlineFormSelectPref">Preference</label>
+          <select class="form-select" id="inlineFormSelectPref">
+            <option selected>Choose...</option>
+            <option value="Java">Java</option>
+            <option value="Cpp">Cpp</option>
+            <option value="Python">Python</option>
+          </select>
+        </div>
+        <!--Following div containsSubmit and Run-->
+        <div>
+          <button type="button" class="btn btn-success" id="run"><i class="bi bi-play-fill"></i></button>
+          <button type="button" class="btn btn-success" id="submit">Submit</button>
+        </div>
+      </div>
+      <textarea type="text" id="editor" class="form-control" aria-label="First name"></textarea>
+    </div>
+
+    <div class="col d-flex flex-column rounded bg-dark px-4">
+      <div class="h-50">
+        <label for="Input" class="text-light mt-4 mb-2">Input</label>
+        <textarea type="text" class="form-control h-75" id="input" aria-label="Last name"></textarea>
+      </div>
+      <div class="h-50">
+        <label for="Output" class="text-light mb-2">Output</label>
+        <textarea type="text" class="form-control h-75" id="output" aria-label="Last name"></textarea>
+      </div>
+    </div>
+  </div>
+ </div>
+</body>
+<script>
+  // CodeMirror initialization
+  var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+    mode: "text/x-c++src",
+    theme: "dracula",
+    lineNumbers: true,
+    autoCloseBrackets: true,
+  });
+
+  var width = window.innerWidth
+
+  var input = document.getElementById("input")
+  var output = document.getElementById("output")
+  var run = document.getElementById("run")
+  var submit = document.getElementById("submit")
+
+  // Set editor size
+  editor.setSize(0.7 * width, "500");
+
+  // Event listener for language selection
+  var option = document.getElementById("inlineFormSelectPref");
+  option.addEventListener("change", function () {
+    if (option.value == "Java") {
+      editor.setOption("mode", "text/x-java");
+    } else if (option.value == "Python") {
+      editor.setOption("mode", "text/x-python");
+    } else {
+      editor.setOption("mode", "text/x-c++src");
+    }
+  });
+
+  // Event listener for compile button
+  var code;
+  run.addEventListener("click", async function () {
+    code = {
+      code: editor.getValue(),
+      input: input.value,
+      lang: option.value
+    };
+
+    try {
+      // Fetch compilation result
+      var oData = await fetch("http://localhost:8000/compile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(code)
+      });
+
+      // Check if response is successful
+      if (oData.ok) {
+        var d = await oData.json();
+        output.value = d.output;
+      } else {
+        output.value = "Error: Failed to compile";
+      }
+    } catch (error) {
+      output.value = "Error: " + error.message;
+    }
+  });
+
+  submit.addEventListener("click", async function () {
+      // Get the value of the output field
+           
+      var actual_output;
+      let correct = true;
+      var n = 0;
+    //test case 1
+    code = {
+      code: editor.getValue(),
+      input: "10\n1 2 0 1 2 2 0 1 0 2",
+      lang: option.value
+    };
+
+    var oData = await fetch("http://localhost:8000/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(code)
+    });
+    
+    if (oData.ok) {
+      var d = await oData.json(); 
+      actual_output = d.output;
+      console.log(actual_output);
+    } 
+      // Compare the actual output with the expected output
+      if (actual_output === "0 0 0 1 1 1 2 2 2 2 ") {
+        n = n+1;
+        //alert("Output is correct");
+        //console.log("Expected:", expected_output);
+        console.log("Actual1:", actual_output);
+      } 
+      else {
+        alert("Wrong on test case 1");
+        //console.log("Expected:", expected_output);
+        console.log("Actual1:", actual_output);
+      }
+    
+     //test case 2 
+      code = {
+      code: editor.getValue(),
+      input: "6\n0 1 2 0 1 2",
+      lang: option.value
+    };
+
+    var oData = await fetch("http://localhost:8000/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(code)
+    });
+
+    if (oData.ok) {
+      var d = await oData.json();
+      actual_output = d.output;
+      console.log(actual_output);
+    }
+    // Compare the actual output with the expected output
+    if (actual_output === "0 0 1 1 2 2 ") {
+      n = n+1;
+      //alert("Output is correct");
+      //console.log("Expected:", expected_output);
+      console.log("Actual2:", actual_output);
+    }
+    else {
+      alert("Wrong on test case 2");
+      //console.log("Expected:", expected_output);
+      console.log("Actual 2:", actual_output);
+    }
+    
+    //test case 3
+    code = {
+      code: editor.getValue(),
+      input: "4\n2 2 1 0",
+      lang: option.value
+    };
+
+    var oData = await fetch("http://localhost:8000/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(code)
+    });
+
+    if (oData.ok) {
+      var d = await oData.json();
+      actual_output = d.output;
+      console.log(actual_output);
+    }
+    // Compare the actual output with the expected output
+    if (actual_output === "0 1 2 2 ") {
+      n = n+1;
+      //alert("Output is correct");
+      //console.log("Expected:", expected_output);
+      console.log("Actual3:", actual_output);
+    }
+    else {
+      alert("Wrong on test case 3");
+      //console.log("Expected:", expected_output);
+      console.log("Actual3:", actual_output);
+    }
+    
+    //test case 4
+    code = {
+      code: editor.getValue(),
+      input: "7\n2 2 2 1 1 0 0",
+      lang: option.value
+    };
+
+    var oData = await fetch("http://localhost:8000/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(code)
+    });
+
+    if (oData.ok) {
+      var d = await oData.json();
+      actual_output = d.output;
+      console.log(actual_output);
+    }
+    // Compare the actual output with the expected output
+    if (actual_output === "0 0 1 1 2 2 2 ") {
+      n = n+1;
+      //console.log("Expected:", expected_output);
+      console.log("Actual4:", actual_output);
+    }
+    else {
+      alert("Wrong on test case 4");
+      //console.log("Expected:", expected_output);
+      console.log("Actual4:", actual_output);
+    }
+
+    //test case 5
+    code = {
+      code: editor.getValue(),
+      input: "5\n0 0 1 2 2",
+      lang: option.value
+    };
+
+    var oData = await fetch("http://localhost:8000/compile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(code)
+    });
+
+    if (oData.ok) {
+      var d = await oData.json();
+      actual_output = d.output;
+      console.log(actual_output);
+    }
+    // Compare the actual output with the expected output
+    if (actual_output === "0 0 1 2 2 ") {
+      n = n + 1;
+      //console.log("Expected:", expected_output);
+      console.log("Actual5:", actual_output);
+    }
+    else {
+      alert("Wrong on test case 5");
+      //console.log("Expected:", expected_output);
+      console.log("Actual5:", actual_output);
+    }
+
+    if(n === 5){
+      alert("Accepted :)");
+    }
+
+    });
+
+</script>
+
+</html>
